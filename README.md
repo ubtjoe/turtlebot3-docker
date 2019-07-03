@@ -43,13 +43,13 @@ _Note: the `intel` is provided as a reference only.  It should work as-is, but i
 First, choose which image you want to build: `intel` or `nvidia`, then `symlink` it to `Dockerfile`.  For example, if you wish to use the `intel` version, do the following:
 
 ```bash
-ln -sf Dockerfile.intel Dockerfile
+[host] ln -sf Dockerfile.intel Dockerfile
 ```
 
 Finally, build the image:
 
 ```bash
-docker build --network=host -t turtlebot3-docker .
+[host] docker build --network=host -t turtlebot3-docker .
 ```
 
 ### Run
@@ -83,7 +83,7 @@ _Note: the `intel` option follows similarly, just use `launch-docker-intel.sh` i
 It's a little kludgy, but to get another terminal open, do the following:
 
 ```bash
-docker exec -it {your_container_id} /bin/bash
+[host] docker exec -it {your_container_id} /bin/bash
 ```
 
 `your_container_id` is the hash listed under the `PORTS` column associated with your running container.  _Note: I couldn't get the `NAMES` field to work correctly here._
