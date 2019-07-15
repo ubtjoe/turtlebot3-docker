@@ -1,0 +1,52 @@
+FROM ros:kinetic-ros-base-xenial
+
+## follow instructions from http://emanual.robotis.com/docs/en/platform/turtlebot3/raspberry_pi_3_setup/#install-linux-based-on-raspbian
+
+ARG username=rosslave
+ARG groupid=1000
+ARG userid=1000
+
+# USE BASH
+SHELL ["/bin/bash", "-c"]
+
+# RUN LINE BELOW TO REMOVE debconf ERRORS (MUST RUN BEFORE ANY apt-get CALLS)
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
+
+#### 6.2.1.1 Step 2: Install ROS on TurtleBot PC - most of this was achieved in starting docker image
+RUN apt-get install -y ros-kinetic-desktop-full ros-kinetic-rqt-*
+RUN apt-get install -y python-rosinstall
+RUN source ros_entrypoint.sh \
+    && mkdir -p /catkin_ws/src \
+    && cd /catkin_ws/src \
+    && catkin_init_workspace \
+    && cd /catkin_ws \
+    && catkin_make
+RUN echo "source /catkin_ws/devel/setup.bash" >> ~/.bashrc 
+
+#### 6.2.1.1 Step 3: Install Dependent Packages on TurtleBot PC
+RUN source ros_entrypoint.sh \
+    && cd /catkin_ws/src \
+    && git clone https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git \
+    && git clone https://github.com/ROBOTIS-GIT/turtlebot3.git
+RUN cd /catkin_ws/src/turtlebot3 && rm -rf turtlebot3_description/ \
+    turtlebot3_teleop/ turtlebot3_navigation/ turtlebot3_slam/ turtlebot3_example
+RUN apt-get install -y ros-kinetic-rosserial-python ros-kinetic-tf
+RUN source ros_entrypoint.sh && cd /catkin_ws && catkin_make
+
+#### add utilities for networking and connections
+RUN apt-get install -y net-tools iputils-ping udev sudo
+
+# setup user env at the end
+# -m option creates a fake writable home folder
+RUN adduser --disabled-password --gecos '' $username
+RUN adduser $username sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER $username
+RUN echo "source /opt/ros/kinetic/setup.bash" >> /home/$username/.bashrc
+RUN echo "source /catkin_ws/devel/setup.bash" >> /home/$username/.bashrc
+
+#### 6.2.1.1 Step 4: USB Settings (WAIT UNTIL THE END TO WORRY ABOUT THIS)
+#RUN echo "rosrun turtlebot3_bringup create_udev_rules" >> /home/$username/.bashrc
