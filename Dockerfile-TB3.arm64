@@ -29,7 +29,6 @@ RUN mkdir -p /catkin_ws/src \
 RUN cd /catkin_ws/src/turtlebot3 && rm -rf turtlebot3_description/ \
     turtlebot3_teleop/ turtlebot3_navigation/ turtlebot3_slam/ turtlebot3_example
 RUN apt-get install -y ros-kinetic-rosserial-python ros-kinetic-tf
-#RUN source ros_entrypoint.sh && cd /catkin_ws && catkin_make
 
 #### realsense - adapted from jetson hacks
 RUN apt-get install -y software-properties-common
@@ -45,18 +44,14 @@ RUN git clone https://github.com/ubtjoe/buildLibrealsense2Xavier.git \
     && git checkout for-docker \
     && ./installLibrealsense.sh
 ## ros
-### dependencies - see https://github.com/IntelRealSense/realsense-ros/blob/development/.travis.yml
-#RUN apt-get install -y ros-kinetic-cv-bridge \
-    #&& ros-kinetic-image-transport \ # may need to build this from source
-    #&& ros-kinetic-diagnostic-updater \
-    #&& ros-kinetic-ddynamic-reconfigure
+### dependencies - see https://github.com/IntelRealSense/realsense-ros/blob/development/.travis.yml.  Note: most dependencies have already been installed above
 RUN apt-get install ros-kinetic-rgbd-launch
-### install from sources - see https://github.com/IntelRealSense/realsense-ros#installation-instructions 
+### install from sources - see https://github.com/IntelRealSense/realsense-ros#installation-instructions.  Note: many of these dependencies do not have arm64 binaries pre-built, so build them from source here
 RUN cd /catkin_ws/src \
     && git clone https://github.com/IntelRealSense/realsense-ros.git \
     && cd realsense-ros/ \
     && git fetch --tags \
-    && git checkout $RealSenseRosVer  # TODO(jwd) - make this an arg
+    && git checkout $RealSenseRosVer
 RUN cd /catkin_ws/src \
     && git clone https://github.com/pal-robotics/ddynamic_reconfigure.git \
     && cd ddynamic_reconfigure \
@@ -85,5 +80,4 @@ USER $username
 RUN echo "source /opt/ros/kinetic/setup.bash" >> /home/$username/.bashrc
 RUN echo "source /catkin_ws/devel/setup.bash" >> /home/$username/.bashrc
 
-#### 6.2.1.1 Step 4: USB Settings (WAIT UNTIL THE END TO WORRY ABOUT THIS)
-#RUN echo "rosrun turtlebot3_bringup create_udev_rules" >> /home/$username/.bashrc
+#### 6.2.1.1 Step 4: USB Settings (THIS IS DONE ON THE HOST)
