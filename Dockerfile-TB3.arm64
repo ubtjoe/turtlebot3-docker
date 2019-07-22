@@ -23,7 +23,9 @@ RUN apt-get install -y python-rosinstall
 RUN mkdir -p /catkin_ws/src \
     && cd /catkin_ws/src \
     && git clone https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git \
-    && git clone https://github.com/ROBOTIS-GIT/turtlebot3.git
+    && git clone https://github.com/ubtjoe/turtlebot3.git \
+    && cd turtlebot3 \
+    && git checkout dreslam
 RUN cd /catkin_ws/src/turtlebot3 && rm -rf turtlebot3_description/ \
     turtlebot3_teleop/ turtlebot3_navigation/ turtlebot3_slam/ turtlebot3_example
 RUN apt-get install -y ros-kinetic-rosserial-python ros-kinetic-tf

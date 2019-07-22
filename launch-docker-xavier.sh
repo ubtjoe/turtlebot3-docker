@@ -14,7 +14,7 @@ fi
 # MODIFY BELOW (NOTE(jwd) - you may need to change the network id `wlp3s0` below)
 export ROS_MASTER_URI=192.168.1.124:11311
 export ROS_HOSTNAME=$(ifconfig wlan0 | awk '/inet / {print $2}')
-export ROS_HOSTNAME_CONTAINER=realsense-test
+export ROS_HOSTNAME_CONTAINER=dreslam-host-test
 # END MODIFY
 
 docker run -it --rm \
@@ -30,4 +30,4 @@ docker run -it --rm \
     --network=host \
     --env "ROS_MASTER_URI=http://$ROS_MASTER_URI" \
     --env "ROS_HOSTNAME=$ROS_HOSTNAME" \
-    tb3-xavier
+    dreslam-host
