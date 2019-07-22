@@ -1,0 +1,111 @@
+FROM ros:kinetic-ros-base-xenial
+
+## follow instructions from http://emanual.robotis.com/docs/en/platform/turtlebot3/raspberry_pi_3_setup/#install-linux-based-on-raspbian
+
+ARG username=ros
+ARG groupid=1000
+ARG userid=1000
+ARG RealSenseRosVer=2.2.7
+
+# USE BASH
+SHELL ["/bin/bash", "-c"]
+
+# RUN LINE BELOW TO REMOVE debconf ERRORS (MUST RUN BEFORE ANY apt-get CALLS)
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
+
+#### 6.2.1.1 Step 2: Install ROS on TurtleBot PC - most of this was achieved in starting docker image
+RUN apt-get install -y ros-kinetic-desktop-full ros-kinetic-rqt-*
+RUN apt-get install -y python-rosinstall
+
+#### 6.2.1.1 Step 3: Install Dependent Packages on TurtleBot PC
+#RUN mkdir -p /catkin_ws/src \
+#    && cd /catkin_ws/src \
+#    && git clone https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git \
+#    && git clone https://github.com/ROBOTIS-GIT/turtlebot3.git
+#RUN cd /catkin_ws/src/turtlebot3 && rm -rf turtlebot3_description/ \
+#    turtlebot3_teleop/ turtlebot3_navigation/ turtlebot3_slam/ turtlebot3_example
+#RUN apt-get install -y ros-kinetic-rosserial-python ros-kinetic-tf
+#RUN source ros_entrypoint.sh && cd /catkin_ws && catkin_make
+
+#### realsense - adapted from jetson hacks
+RUN apt-get install -y software-properties-common
+RUN echo "$Adding Universe repository and updating" \
+    && apt-add-repository universe \
+    && apt-get update \
+    && echo "$Adding dependencies, graphics libraries and tools" \
+    && apt-get install libssl-dev libusb-1.0-0-dev pkg-config -y \
+    && apt-get install build-essential -y \
+    && apt-get install libgtk-3-dev libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev -y
+RUN apt-get install -y wget \
+    && wget https://cmake.org/files/v3.8/cmake-3.8.2.tar.gz \
+    && tar -xvf cmake-3.8.2.tar.gz \
+    && cd cmake* \
+    && ./bootstrap \
+    && make \
+    && make install
+RUN apt-get install -y gnupg-curl \
+    && wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.2.148-1_amd64.deb \
+    && dpkg --install cuda-repo-ubuntu1604_9.2.148-1_amd64.deb \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub \
+    && apt-get update \
+    && apt-get install -y cuda
+ENV CUDACXX=/usr/local/cuda/bin/nvcc
+#### realsense - adapted from jetson hacks
+RUN apt-get install -y software-properties-common
+RUN echo "$Adding Universe repository and updating" \
+    && apt-add-repository universe \
+    && apt-get update \
+    && echo "$Adding dependencies, graphics libraries and tools" \
+    && apt-get install libssl-dev libusb-1.0-0-dev pkg-config -y \
+    && apt-get install build-essential -y \
+    && apt-get install libgtk-3-dev libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev -y
+RUN git clone https://github.com/ubtjoe/buildLibrealsense2Xavier.git \
+    && cd buildLibrealsense2Xavier \
+    && git checkout for-docker-x86-cuda \
+    && ./installLibrealsense.sh
+## ros
+### dependencies - see https://github.com/IntelRealSense/realsense-ros/blob/development/.travis.yml
+#RUN apt-get install -y ros-kinetic-cv-bridge \
+    #&& ros-kinetic-image-transport \ # may need to build this from source
+    #&& ros-kinetic-diagnostic-updater \
+    #&& ros-kinetic-ddynamic-reconfigure
+RUN apt-get install ros-kinetic-rgbd-launch
+### install from sources - see https://github.com/IntelRealSense/realsense-ros#installation-instructions 
+RUN mkdir -p /catkin_ws/src \
+    && cd /catkin_ws/src \
+    && git clone https://github.com/IntelRealSense/realsense-ros.git \
+    && cd realsense-ros/ \
+    && git fetch --tags \
+    && git checkout $RealSenseRosVer  # TODO(jwd) - make this an arg
+RUN cd /catkin_ws/src \
+    && git clone https://github.com/pal-robotics/ddynamic_reconfigure.git \
+    && cd ddynamic_reconfigure \
+    && git checkout kinetic-devel
+RUN cd /catkin_ws/src \
+    && git clone https://github.com/ros-perception/image_common.git \
+    && cd image_common \
+    && git checkout hydro-devel
+RUN source ros_entrypoint.sh \
+    && cd /catkin_ws/src \
+    && catkin_init_workspace \
+    && cd .. \
+    && catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release \
+    && catkin_make install
+
+#### add utilities for networking and connections
+RUN apt-get install -y net-tools iputils-ping vim sudo
+
+# setup user env at the end
+# -m option creates a fake writable home folder
+RUN adduser --disabled-password --gecos '' $username
+RUN adduser $username sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER $username
+RUN echo "source /opt/ros/kinetic/setup.bash" >> /home/$username/.bashrc
+#RUN echo "source /catkin_ws/devel/setup.bash" >> /home/$username/.bashrc
+
+#### 6.2.1.1 Step 4: USB Settings (WAIT UNTIL THE END TO WORRY ABOUT THIS)
+#RUN echo "rosrun turtlebot3_bringup create_udev_rules" >> /home/$username/.bashrc
