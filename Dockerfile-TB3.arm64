@@ -5,7 +5,7 @@ FROM ros:kinetic-ros-base-xenial
 ARG username=rosslave
 ARG groupid=1000
 ARG userid=1000
-ARG RealSenseRosVer=2.2.7
+ARG RealSenseRosVer=2.1.4
 
 # USE BASH
 SHELL ["/bin/bash", "-c"]
@@ -41,7 +41,7 @@ RUN echo "$Adding Universe repository and updating" \
     && apt-get install libgtk-3-dev libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev -y
 RUN git clone https://github.com/ubtjoe/buildLibrealsense2Xavier.git \
     && cd buildLibrealsense2Xavier \
-    && git checkout for-docker \
+    && git checkout for-docker-examples \
     && ./installLibrealsense.sh
 ## ros
 ### dependencies - see https://github.com/IntelRealSense/realsense-ros/blob/development/.travis.yml.  Note: most dependencies have already been installed above
@@ -52,10 +52,10 @@ RUN cd /catkin_ws/src \
     && cd realsense-ros/ \
     && git fetch --tags \
     && git checkout $RealSenseRosVer
-RUN cd /catkin_ws/src \
-    && git clone https://github.com/pal-robotics/ddynamic_reconfigure.git \
-    && cd ddynamic_reconfigure \
-    && git checkout kinetic-devel
+#RUN cd /catkin_ws/src \
+#    && git clone https://github.com/pal-robotics/ddynamic_reconfigure.git \
+#    && cd ddynamic_reconfigure \
+#    && git checkout kinetic-devel
 RUN cd /catkin_ws/src \
     && git clone https://github.com/ros-perception/image_common.git \
     && cd image_common \

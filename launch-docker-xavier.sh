@@ -14,10 +14,12 @@ fi
 # MODIFY BELOW (NOTE(jwd) - you may need to change the network id `wlp3s0` below)
 export ROS_MASTER_URI=192.168.1.124:11311
 export ROS_HOSTNAME=$(ifconfig wlan0 | awk '/inet / {print $2}')
-export ROS_HOSTNAME_CONTAINER=dreslam-host-test
+#export ROS_MASTER_URI=localhost:11311
+#export ROS_HOSTNAME=localhost
+export ROS_HOSTNAME_CONTAINER=dreslam-xavier
 # END MODIFY
 
-docker run -it --rm \
+docker run -i -t --rm \
     --env DISPLAY=$DISPLAY \
     --env "QT_X11_NO_MITSHM=1" \
     -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
