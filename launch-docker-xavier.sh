@@ -32,4 +32,5 @@ docker run -i -t --rm \
     --network=host \
     --env "ROS_MASTER_URI=http://$ROS_MASTER_URI" \
     --env "ROS_HOSTNAME=$ROS_HOSTNAME" \
-    dreslam-host
+    dreslam-host \
+    ./launch-xavier-nodes.sh

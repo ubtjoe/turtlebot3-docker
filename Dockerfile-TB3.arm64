@@ -52,6 +52,7 @@ RUN cd /catkin_ws/src \
     && cd realsense-ros/ \
     && git fetch --tags \
     && git checkout $RealSenseRosVer
+# NOTE: ddynamic_reconfigure is included with the version of realsense ros 2.1.4, but not for later versions.
 #RUN cd /catkin_ws/src \
 #    && git clone https://github.com/pal-robotics/ddynamic_reconfigure.git \
 #    && cd ddynamic_reconfigure \
@@ -69,6 +70,10 @@ RUN source ros_entrypoint.sh \
 
 #### add utilities for networking and connections
 RUN apt-get install -y net-tools iputils-ping vim sudo
+
+#### copy launch-nodes
+COPY ./launch-xavier-nodes.sh /
+RUN chmod +x /launch-xavier-nodes.sh
 
 # setup user env at the end
 # -m option creates a fake writable home folder
