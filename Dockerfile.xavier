@@ -1,0 +1,57 @@
+FROM ros:kinetic-ros-base-xenial
+
+## follow instructions from http://emanual.robotis.com/docs/en/platform/turtlebot3/raspberry_pi_3_setup/#install-linux-based-on-raspbian
+
+ARG username=turtlebot
+ARG groupid=1000
+ARG userid=1000
+
+# USE BASH
+SHELL ["/bin/bash", "-c"]
+
+# RUN LINE BELOW TO REMOVE debconf ERRORS (MUST RUN BEFORE ANY apt-get CALLS)
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
+
+#### 6.2.1.1 Step 2: Install ROS on TurtleBot PC - most of this was achieved in starting docker image
+RUN apt-get install -y ros-kinetic-desktop-full ros-kinetic-rqt-*
+RUN apt-get install -y python-rosinstall
+
+#### 6.2.1.1 Step 3: Install Dependent Packages on TurtleBot PC
+RUN apt-get install -y ros-kinetic-rosserial-python ros-kinetic-tf
+RUN apt-get install python-catkin-tools -y
+
+#### add utilities for networking and connections
+RUN apt-get install -y net-tools iputils-ping vim sudo
+
+# setup user env at the end
+# -m option creates a fake writable home folder
+RUN adduser --disabled-password --gecos '' $username
+RUN adduser $username sudo
+RUN adduser $username dialout
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+COPY ./tb3_entrypoint.sh /
+
+RUN chmod a+rwx /tb3_entrypoint.sh
+
+USER $username
+
+RUN mkdir -p /home/$username/catkin_ws/src \
+    && cd /home/$username/catkin_ws/src \
+    && git clone https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git \
+    && git clone https://github.com/ROBOTIS-GIT/turtlebot3.git \
+    && cd turtlebot3 \
+RUN cd /home/$username/catkin_ws/src/turtlebot3 && rm -rf turtlebot3_description/ \
+    turtlebot3_teleop/ turtlebot3_navigation/ turtlebot3_slam/ turtlebot3_example
+
+RUN source /opt/ros/kinetic/setup.bash \ 
+    && cd /home/$username/catkin_ws/src \
+    && catkin init --workspace . \
+    && cd .. \
+    && catkin build
+
+WORKDIR /home/$username
+ENTRYPOINT ["/tb3_entrypoint.sh"]
+#### 6.2.1.1 Step 4: USB Settings (THIS IS DONE ON THE HOST)
